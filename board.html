@@ -81,6 +81,7 @@
         <div class="tray-btns">
           <button class="tray-btn answer-btn" id="answerBtn" type="button">✅ 正解</button>
           <button class="tray-btn" id="resetBtn" type="button">🔄 リセット</button>
+          <button class="tray-btn download-btn" id="downloadBtn" type="button">📥 保存</button>
         </div>
       </div>
       <div class="selected-status" id="selectedStatus">チップをクリックして選択</div>
@@ -389,6 +390,184 @@
         ? "📋 第12回 最終議事録（閉じる）"
         : "📋 配置できたら → 第12回 最終議事録で確認";
     });
+
+    // ── マップダウンロード ────────────────────────────────
+    document.getElementById("downloadBtn").addEventListener("click", downloadMap);
+
+    async function downloadMap() {
+      const DPR   = 2;          // 高解像度
+      const CELL  = 170;        // セルサイズ(px)
+      const GAP   = 6;
+      const PAD   = 24;
+      const HDR   = 72;         // タイトルエリア高さ
+      const FTR   = 44;         // フッター高さ
+      const GRID_W = CELL * 3 + GAP * 2;
+      const GRID_H = CELL * 3 + GAP * 2;
+      const W = PAD * 2 + GRID_W + 48;   // コンパスラベル分+余白
+      const H = PAD * 2 + HDR + GRID_H + FTR;
+
+      const cv  = document.createElement("canvas");
+      cv.width  = W * DPR;
+      cv.height = H * DPR;
+      const ctx = cv.getContext("2d");
+      ctx.scale(DPR, DPR);
+
+      // ─ 背景 ─
+      ctx.fillStyle = "#fdf8f2";
+      ctx.fillRect(0, 0, W, H);
+
+      // ─ タイトル ─
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#e07030";
+      ctx.font = "bold 18px 'Hiragino Sans', 'Yu Gothic UI', sans-serif";
+      ctx.fillText("テーマパーク開園プロジェクト", W / 2, PAD + 22);
+      ctx.fillStyle = "#7a6a58";
+      ctx.font = "13px 'Hiragino Sans', 'Yu Gothic UI', sans-serif";
+      ctx.fillText("施設・エリア配置マップ", W / 2, PAD + 44);
+      // 日付
+      const today = new Date().toLocaleDateString("ja-JP");
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#b0a090";
+      ctx.textAlign = "right";
+      ctx.fillText(today, W - PAD, PAD + 44);
+
+      // ─ コンパスラベル ─
+      const GX = PAD + 24;   // グリッド左上X
+      const GY = PAD + HDR;  // グリッド左上Y
+      ctx.fillStyle = "#8a7860";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("⬆ 北", GX + GRID_W / 2, GY - 6);
+      ctx.fillText("⬇ 南", GX + GRID_W / 2, GY + GRID_H + 18);
+      ctx.textAlign = "right";
+      ctx.fillText("西 ⬅", GX - 6, GY + GRID_H / 2 + 5);
+      ctx.textAlign = "left";
+      ctx.fillText("➡ 東", GX + GRID_W + 6, GY + GRID_H / 2 + 5);
+
+      // ─ グリッド枠 ─
+      ctx.fillStyle = "#b0986a";
+      roundRect(ctx, GX, GY, GRID_W, GRID_H, 10);
+      ctx.fill();
+
+      // ─ セルを描画 ─
+      // 画像をまとめてプリロード
+      const imgCache = {};
+      const loadImg = src => new Promise(res => {
+        if (imgCache[src]) { res(imgCache[src]); return; }
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.onload  = () => { imgCache[src] = im; res(im); };
+        im.onerror = () => res(null);
+        im.src = src;
+      });
+
+      // 全チップ画像を事前ロード
+      await Promise.all(CHIPS.map(c => loadImg(c.img)));
+
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const cell = GRID_CELLS[row * 3 + col];
+          const cx   = GX + col * (CELL + GAP);
+          const cy   = GY + row * (CELL + GAP);
+
+          // セル背景色
+          if (cell.id === "nw") ctx.fillStyle = "#cfc8b0";
+          else if (cell.id === "se") ctx.fillStyle = "#a8cce0";
+          else ctx.fillStyle = "#fffcf6";
+          roundRect(ctx, cx, cy, CELL, CELL, 7);
+          ctx.fill();
+
+          // 枠線ヒント
+          const placed = placements[cell.id] || [];
+          if (!cell.fixed && placed.length > 0) {
+            ctx.strokeStyle = placed.length >= 3 ? "#b85820"
+                            : placed.length === 2 ? "#e07030" : "#c8b08a";
+            ctx.lineWidth = placed.length >= 2 ? 2.5 : 1.5;
+            roundRect(ctx, cx, cy, CELL, CELL, 7);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+          }
+
+          // 方角ラベル
+          ctx.fillStyle = cell.id === "se" ? "#3a5878"
+                        : cell.id === "nw" ? "#6a6050" : "#8a7058";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText(cell.label, cx + 6, cy + 14);
+
+          if (cell.fixed) {
+            // 固定セル：アイコン＋名前
+            ctx.font = "38px serif";
+            ctx.textAlign = "center";
+            ctx.fillText(cell.fixedIcon, cx + CELL / 2, cy + CELL / 2 + 8);
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillStyle = cell.id === "se" ? "#3a5878" : "#6a6050";
+            ctx.fillText(cell.fixedText, cx + CELL / 2, cy + CELL / 2 + 28);
+          } else if (placed.length > 0) {
+            // チップ画像を描画
+            if (placed.length === 1) {
+              const chip = chipById(placed[0]);
+              const im   = imgCache[chip.img];
+              if (im) {
+                const s = CELL - 28;
+                ctx.drawImage(im, cx + (CELL - s) / 2, cy + 16, s, s);
+              }
+              // チップ名
+              ctx.fillStyle = "#4a3828";
+              ctx.font = "bold 9px sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText(chip.name, cx + CELL / 2, cy + CELL - 5);
+            } else {
+              // 複数チップ：2列グリッド
+              const cols = placed.length <= 2 ? placed.length : 2;
+              const s    = Math.floor((CELL - 16 - (cols - 1) * 4) / cols);
+              placed.forEach((chipId, i) => {
+                const chip = chipById(chipId);
+                const im   = imgCache[chip.img];
+                if (!im) return;
+                const c2 = Math.min(placed.length, 2);
+                const ix  = cx + 6 + (i % c2) * (s + 4);
+                const iy  = cy + 18 + Math.floor(i / c2) * (s + 4);
+                ctx.drawImage(im, ix, iy, s, s);
+              });
+            }
+          } else {
+            // 空マス
+            ctx.fillStyle = "#d0c0b0";
+            ctx.font = "11px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("未配置", cx + CELL / 2, cy + CELL / 2 + 4);
+          }
+        }
+      }
+
+      // ─ フッター ─
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#b0a090";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("グループで話し合い、完成させた配置図です。", W / 2, GY + GRID_H + 36);
+
+      // ─ ダウンロード ─
+      const a   = document.createElement("a");
+      a.download = `themepark-map-${today.replace(/\//g, "")}.png`;
+      a.href     = cv.toDataURL("image/png");
+      a.click();
+    }
+
+    // roundRect polyfill
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
 
     // ── 初期化 ──────────────────────────────────────────
     renderGrid();

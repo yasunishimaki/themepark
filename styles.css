@@ -591,6 +591,12 @@ body {
   color: #fff;
 }
 .tray-btn.answer-btn:hover { background: #2d8048; }
+.tray-btn.download-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.tray-btn.download-btn:hover { background: #2a60b0; }
 
 .selected-status {
   font-size: 11px;
