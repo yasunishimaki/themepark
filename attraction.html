@@ -123,6 +123,17 @@
     let placements = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     let selectedId = null;
 
+    // ── パレット順序をシャッフル（初回のみ・ページ中は固定）────────
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    const shuffledChips = shuffle(ATTRACTION_CHIPS);
+
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(placements)); }
     function attrById(id) { return ATTRACTION_CHIPS.find(c => c.id === id); }
     function isPlaced(id) { return Object.values(placements).some(arr => arr.includes(id)); }
@@ -200,11 +211,11 @@
       });
     }
 
-    // ── パレット描画 ──────────────────────────────────────
+    // ── パレット描画（シャッフル順）────────────────────────
     function renderPalette() {
       const palette = document.getElementById("attrPalette");
       palette.innerHTML = "";
-      ATTRACTION_CHIPS.forEach(chip => {
+      shuffledChips.forEach(chip => {
         const placed = isPlaced(chip.id);
         const btn = document.createElement("button");
         btn.type = "button";

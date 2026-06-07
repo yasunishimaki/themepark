@@ -585,7 +585,8 @@ body {
   gap: 6px;
 }
 .img-palette-attr {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
 }
 
 .img-chip-btn {
@@ -627,8 +628,8 @@ body {
   cursor: default;
   pointer-events: none;
 }
-.img-chip-sm img { max-width: 58px; }
-.img-chip-sm span { font-size: 9px; }
+.img-chip-sm img { max-width: clamp(52px, 6vw, 72px); }
+.img-chip-sm span { font-size: clamp(8px, 1vw, 10px); }
 
 /* ── セル内の画像チップ ─────────────────────────── */
 .cell-img-chips {
@@ -664,7 +665,7 @@ body {
 ══════════════════════════════════════════════ */
 .attr-layout {
   display: grid;
-  grid-template-columns: 1fr 220px;
+  grid-template-columns: 1fr clamp(220px, 26vw, 320px);
   gap: 0;
   height: calc(100vh - 58px);
   overflow: hidden;
@@ -760,8 +761,8 @@ body {
   overflow-y: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px;
+  gap: 10px;
+  padding: 10px;
   align-content: flex-start;
 }
 
@@ -769,25 +770,27 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   cursor: pointer;
 }
 .zone-chip-img {
-  width: 64px;
-  height: 64px;
+  width: clamp(80px, 10vw, 110px);
+  height: clamp(80px, 10vw, 110px);
   object-fit: contain;
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 8px;
+  border: 2px solid rgba(0,0,0,.06);
   transition: opacity .15s, transform .1s;
   background: #fafaf8;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10);
 }
-.zone-chip-img:hover { opacity: .7; transform: scale(.93); }
+.zone-chip-img:hover { opacity: .75; transform: scale(.92); }
 .zone-chip-name {
-  font-size: 9px;
+  font-size: clamp(9px, 1.2vw, 11px);
   text-align: center;
   color: var(--muted);
+  font-weight: 600;
   line-height: 1.2;
-  max-width: 64px;
+  max-width: clamp(80px, 10vw, 110px);
   word-break: break-all;
 }
 
