@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- 紙吹雪キャンバス（全画面オーバーレイ） -->
+  <canvas id="confettiCanvas"></canvas>
+
   <header class="site-header compact">
     <div>
       <p class="eyebrow">◈ STEP 1 ◈</p>
@@ -22,7 +25,25 @@
   <main class="board-layout">
     <!-- 3×3グリッド -->
     <section class="board-stage" aria-label="配置グリッド">
-      <div class="game-grid" id="gameGrid"></div>
+
+      <!-- 進捗バー -->
+      <div class="progress-wrap">
+        <span class="progress-label" id="progressLabel">0 / 10 配置済み</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- コンパス付きマップフレーム -->
+      <div class="map-wrap">
+        <div class="compass-n">⬆ 北</div>
+        <div class="compass-row">
+          <div class="compass-w">西 ⬅</div>
+          <div class="game-grid" id="gameGrid"></div>
+          <div class="compass-e">➡ 東</div>
+        </div>
+        <div class="compass-s">南 ⬇</div>
+      </div>
 
       <!-- 第12回議事録で確認（配置後に開く） -->
       <div class="final-check-wrap">
@@ -67,7 +88,7 @@
       <div class="board-tip">
         <strong>操作方法</strong><br>
         ① チップをクリック → 選択<br>
-        ② マスをクリック → 配置<br>
+        ② マスをクリック or ドロップ → 配置<br>
         ③ マス内の画像クリック → 削除<br>
         ※ 中央川は2枚あります
       </div>
@@ -90,22 +111,98 @@
   <script src="data.js"></script>
   <script>
     const STORAGE_KEY = "themepark-board-v3";
-    let placements   = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    let selectedId   = null;
+    let placements = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    let selectedId = null;
+    let draggedId  = null;
+    let lastPlaced = null; // アニメーション用
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(placements)); }
     function chipById(id) { return CHIPS.find(c => c.id === id); }
-    function isPlaced(id) {
-      return Object.values(placements).some(arr => arr.includes(id));
+    function isPlaced(id) { return Object.values(placements).some(arr => arr.includes(id)); }
+
+    // ── 進捗バー更新 ────────────────────────────────────
+    function updateProgress() {
+      const total  = CHIPS.length;
+      const placed = CHIPS.filter(c => isPlaced(c.id)).length;
+      const fill   = document.getElementById("progressFill");
+      const label  = document.getElementById("progressLabel");
+
+      fill.style.width = (placed / total * 100) + "%";
+      fill.classList.toggle("complete", placed === total);
+
+      if (placed === total) {
+        label.textContent = "🎉 全チップ配置完了！";
+        label.style.color = "#3a9a5a";
+        setTimeout(launchConfetti, 350);
+      } else {
+        label.textContent = `${placed} / ${total} 配置済み`;
+        label.style.color = "";
+      }
+    }
+
+    // ── 紙吹雪 ──────────────────────────────────────────
+    function launchConfetti() {
+      const canvas = document.getElementById("confettiCanvas");
+      canvas.style.display = "block";
+      const ctx = canvas.getContext("2d");
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ["#e07030","#3a9a5a","#3a7bd5","#d4a030","#d4555a","#9a5ad4","#fff","#f0c060"];
+      const particles = Array.from({length: 180}, () => ({
+        x: Math.random() * canvas.width,
+        y: -40,
+        vx: (Math.random() - 0.5) * 5,
+        vy: Math.random() * 4 + 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        w: Math.random() * 12 + 5,
+        h: Math.random() * 6 + 3,
+        rotation: Math.random() * 360,
+        rotV: (Math.random() - 0.5) * 10,
+        alpha: 1,
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+          if (p.y < canvas.height + 50) {
+            alive = true;
+            p.x  += p.vx;
+            p.y  += p.vy;
+            p.vy += 0.08; // 重力
+            p.rotation += p.rotV;
+            if (p.y > canvas.height * 0.7) p.alpha = Math.max(0, p.alpha - 0.02);
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+          }
+        });
+        if (alive) requestAnimationFrame(draw);
+        else canvas.style.display = "none";
+      }
+      requestAnimationFrame(draw);
     }
 
     // ── 選択状態 ────────────────────────────────────────
     function setSelected(id) {
       selectedId = id;
       const chip = id ? chipById(id) : null;
-      document.getElementById("selectedStatus").textContent =
-        chip ? `「${chip.name}」を選択中` : "チップをクリックして選択";
+      const status = document.getElementById("selectedStatus");
+      status.textContent = chip
+        ? `「${chip.name}」を選択中 ✦ マスへドロップまたはクリック`
+        : "チップをクリックして選択";
       renderPalette();
+      // 配置可能マスをハイライト
+      GRID_CELLS.forEach(cell => {
+        if (cell.fixed) return;
+        const el = document.querySelector(`[data-cell-id="${cell.id}"]`);
+        if (el) el.classList.toggle("drop-ready", !!id);
+      });
     }
 
     // ── グリッド描画 ─────────────────────────────────────
@@ -114,7 +211,7 @@
       grid.innerHTML = "";
       GRID_CELLS.forEach(cell => {
         const el = document.createElement("div");
-        el.className = "grid-cell" + (cell.fixed ? " fixed" : "");
+        el.className = "grid-cell" + (cell.fixed ? " fixed cell-" + cell.id : " cell-" + cell.id);
         el.dataset.cellId = cell.id;
 
         const lbl = document.createElement("div");
@@ -123,15 +220,32 @@
         el.appendChild(lbl);
 
         if (cell.fixed) {
-          el.innerHTML += `<div class="cell-fixed-content">
-            <span class="fixed-icon">${cell.fixedIcon}</span>
-            <span class="fixed-name">${cell.fixedText}</span></div>`;
+          const fc = document.createElement("div");
+          fc.className = "cell-fixed-content";
+          fc.innerHTML = `<span class="fixed-icon">${cell.fixedIcon}</span>
+                          <span class="fixed-name">${cell.fixedText}</span>`;
+          el.appendChild(fc);
         } else {
           const area = document.createElement("div");
           area.className = "cell-img-chips";
           area.id = "chips-" + cell.id;
           el.appendChild(area);
+
+          // クリック配置
           el.addEventListener("click", () => onCellClick(cell.id));
+
+          // ドラッグ&ドロップ受け入れ
+          el.addEventListener("dragover", e => {
+            if (draggedId) { e.preventDefault(); el.classList.add("drag-over"); }
+          });
+          el.addEventListener("dragleave", e => {
+            if (!el.contains(e.relatedTarget)) el.classList.remove("drag-over");
+          });
+          el.addEventListener("drop", e => {
+            e.preventDefault();
+            el.classList.remove("drag-over");
+            if (draggedId) { selectedId = draggedId; onCellClick(cell.id); draggedId = null; }
+          });
         }
         grid.appendChild(el);
       });
@@ -148,7 +262,7 @@
         area.innerHTML = "";
         const placed = placements[cell.id] || [];
 
-        // ③ 枠線ヒント（枚数に応じて太く）
+        // 枠線ヒント（枚数に応じて太く）
         el.classList.remove("depth-1","depth-2","depth-3");
         if (placed.length === 1) el.classList.add("depth-1");
         else if (placed.length === 2) el.classList.add("depth-2");
@@ -162,6 +276,11 @@
           img.alt   = chip.name;
           img.className = "cell-chip-img";
           img.title = chip.name + "（クリックで削除）";
+          // 最後に置いたチップにポップアニメ
+          if (chipId === lastPlaced) {
+            img.classList.add("pop-in");
+            lastPlaced = null;
+          }
           img.addEventListener("click", e => {
             e.stopPropagation();
             removeChip(chipId, cell.id);
@@ -171,7 +290,7 @@
       });
     }
 
-    // ── パレット描画（2列画像グリッド）──────────────────────
+    // ── パレット描画 ──────────────────────────────────────
     function renderPalette() {
       const palette = document.getElementById("chipPalette");
       palette.innerHTML = "";
@@ -184,10 +303,26 @@
           (placed ? " placed" : "");
         btn.innerHTML = `<img src="${chip.img}" alt="${chip.name}"><span>${chip.name}</span>`;
         btn.title = placed ? "配置済み" : chip.name;
-        btn.addEventListener("click", () => {
-          if (placed) return;
-          setSelected(selectedId === chip.id ? null : chip.id);
-        });
+
+        if (!placed) {
+          // クリック選択
+          btn.addEventListener("click", () => {
+            setSelected(selectedId === chip.id ? null : chip.id);
+          });
+          // ドラッグ開始
+          btn.setAttribute("draggable", "true");
+          btn.addEventListener("dragstart", e => {
+            draggedId = chip.id;
+            setSelected(chip.id);
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", chip.id);
+            btn.classList.add("dragging");
+          });
+          btn.addEventListener("dragend", () => {
+            btn.classList.remove("dragging");
+            draggedId = null;
+          });
+        }
         palette.appendChild(btn);
       });
     }
@@ -201,12 +336,17 @@
 
       if (!placements[cellId]) placements[cellId] = [];
       placements[cellId].push(selectedId);
+      lastPlaced = selectedId;
       save();
 
       const el = document.querySelector(`[data-cell-id="${cellId}"]`);
-      if (el) { el.classList.add("target-active"); setTimeout(() => el.classList.remove("target-active"), 350); }
+      if (el) {
+        el.classList.add("target-active");
+        setTimeout(() => el.classList.remove("target-active"), 400);
+      }
 
       renderCellChips();
+      updateProgress();
       setSelected(null);
     }
 
@@ -217,6 +357,7 @@
       save();
       renderCellChips();
       renderPalette();
+      updateProgress();
       if (selectedId === chipId) setSelected(null);
     }
 
@@ -228,6 +369,7 @@
       setSelected(null);
       renderCellChips();
       renderPalette();
+      updateProgress();
     });
 
     const modal = document.getElementById("answerModal");
@@ -252,6 +394,7 @@
     renderGrid();
     renderPalette();
     setSelected(null);
+    updateProgress();
   </script>
 </body>
 </html>

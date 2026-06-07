@@ -313,64 +313,193 @@ body {
   }
 }
 
-/* ── グリッドステージ ───────────────────────────── */
-.board-stage {
-  padding: 16px;
-  overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+/* ── 紙吹雪キャンバス ─────────────────────────────── */
+#confettiCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
 }
 
+/* ── グリッドステージ ───────────────────────────── */
+.board-stage {
+  padding: 14px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── 進捗バー ──────────────────────────────────── */
+.progress-wrap {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.progress-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  min-width: 110px;
+  transition: color .4s;
+}
+.progress-track {
+  flex: 1;
+  height: 10px;
+  background: #e0d4c4;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e07030, #e8a050);
+  border-radius: 5px;
+  transition: width .55s cubic-bezier(.34,1.56,.64,1);
+}
+.progress-fill.complete {
+  background: linear-gradient(90deg, #3a9a5a, #60c080);
+}
+
+/* ── コンパス付きマップ ────────────────────────── */
+.map-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 640px;
+}
+.compass-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 4px;
+}
+.compass-n, .compass-s {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a7860;
+  letter-spacing: .12em;
+  padding: 2px 0;
+  user-select: none;
+}
+.compass-w, .compass-e {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a7860;
+  letter-spacing: .1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ── ゲームグリッド（地図フレーム） ────────────────── */
 .game-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 4px;
-  width: 100%;
-  max-width: 640px;
+  gap: 5px;
+  flex: 1;
   aspect-ratio: 4/3;
-  background: #c8b89a;
-  border: 3px solid #a89070;
-  border-radius: 10px;
-  padding: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  background: linear-gradient(145deg, #b8a880, #a08860);
+  border: 4px solid #8a6840;
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.25),
+    inset 0 1px 2px rgba(255,255,255,.2),
+    inset 0 -1px 2px rgba(0,0,0,.15);
+  position: relative;
 }
 
+/* ── グリッドセル ──────────────────────────────── */
 .grid-cell {
-  background: var(--surface);
-  border-radius: 6px;
+  background: #fdf8f0;
+  border-radius: 7px;
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 3px;
   cursor: pointer;
-  transition: background .15s, box-shadow .15s;
+  transition: background .15s, box-shadow .2s, transform .15s;
   min-height: 0;
   overflow: hidden;
   position: relative;
 }
-.grid-cell:not(.fixed):not(.target-active):hover {
+.grid-cell:not(.fixed):not(.target-active):not(.drop-ready):hover {
   background: #fff8f0;
   box-shadow: inset 0 0 0 2px var(--primary);
 }
-.grid-cell.target-active {
-  background: #fff0e0;
-  box-shadow: inset 0 0 0 2px var(--primary);
-  animation: pulse .4s ease;
-}
-@keyframes pulse { 0%,100%{box-shadow:inset 0 0 0 2px var(--primary)} 50%{box-shadow:inset 0 0 0 3px #e07030,0 0 8px rgba(224,112,48,.4)} }
 
+/* 配置可能セルのドロップ誘導アニメ */
+.grid-cell.drop-ready {
+  animation: drop-pulse 1.8s ease-in-out infinite;
+}
+@keyframes drop-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(224,112,48,.25); }
+  50%       { box-shadow: inset 0 0 0 2px var(--primary), 0 0 10px rgba(224,112,48,.25); }
+}
+
+/* ドラッグ中にセルを真上に通過したとき */
+.grid-cell.drag-over {
+  background: #fff0e0 !important;
+  box-shadow: inset 0 0 0 3px var(--primary), 0 0 18px rgba(224,112,48,.45) !important;
+  animation: none !important;
+  transform: scale(1.02);
+}
+
+.grid-cell.target-active {
+  animation: pulse .45s ease;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px var(--primary); }
+  50%       { box-shadow: inset 0 0 0 4px #e07030, 0 0 14px rgba(224,112,48,.5); background: #fff0e0; }
+}
+
+/* 固定セル（山・海） */
 .grid-cell.fixed {
-  background: var(--fixed-bg);
   cursor: default;
+}
+.grid-cell.cell-nw {
+  background: linear-gradient(145deg, #d0c8b0, #b0a888);
+}
+.grid-cell.cell-se {
+  background: linear-gradient(145deg, #b0d0e8, #7aaad0);
+}
+.grid-cell.cell-nw .fixed-icon { font-size: clamp(24px, 4vw, 36px); }
+.grid-cell.cell-se .fixed-icon { font-size: clamp(24px, 4vw, 36px); }
+.grid-cell.cell-nw .cell-label { color: #6a6050; }
+.grid-cell.cell-se .cell-label { color: #3a5878; }
+
+/* 配置済みチップのポップインアニメ */
+@keyframes pop-in {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  70%  { transform: scale(1.12) rotate(3deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.cell-chip-img.pop-in {
+  animation: pop-in .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* ドラッグ中チップを半透明に */
+.img-chip-btn.dragging {
+  opacity: 0.4;
 }
 
 .cell-label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--muted);
-  letter-spacing: .06em;
+  color: #8a7058;
+  letter-spacing: .08em;
   line-height: 1;
 }
 
@@ -621,7 +750,14 @@ body {
 .img-chip-btn.selected {
   border-color: var(--primary);
   background: #fff8f0;
-  box-shadow: 0 0 0 3px rgba(224,112,48,.25);
+  box-shadow: 0 4px 16px rgba(224,112,48,.35);
+  animation: chip-float 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+@keyframes chip-float {
+  0%, 100% { transform: translateY(0);   box-shadow: 0 4px 16px rgba(224,112,48,.35); }
+  50%       { transform: translateY(-5px); box-shadow: 0 10px 24px rgba(224,112,48,.45); }
 }
 .img-chip-btn.placed {
   opacity: .3;
