@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>議事録を見る | テーマパーク開園プロジェクト</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header compact">
+    <div>
+      <p class="eyebrow">◈ 議事録確認 ◈</p>
+      <h1>テーマパーク開園プロジェクト</h1>
+    </div>
+    <nav class="top-nav" aria-label="ページ">
+      <a href="index.html">ホーム</a>
+      <a href="board.html">地図に配置する</a>
+    </nav>
+  </header>
+
+  <main class="content-layout">
+
+    <!-- グループ人数・担当選択 -->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>議事録カード</h2>
+      </div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:16px;line-height:1.9;">
+        ① グループの人数を選んでください。&nbsp; ② 自分の担当ボタンをクリックすると議事録が表示されます。<br>
+        <strong style="color:var(--primary);">他のメンバーの画面は見ないようにしましょう。</strong>
+      </p>
+
+      <!-- 人数選択 -->
+      <p style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.06em;">① グループ人数</p>
+      <div class="size-controls" role="group" aria-label="グループ人数">
+        <button class="size-btn" data-size="4">4人グループ</button>
+        <button class="size-btn" data-size="5">5人グループ</button>
+        <button class="size-btn" data-size="6">6人グループ</button>
+      </div>
+
+      <!-- 担当選択 -->
+      <p style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.06em;">② 自分の担当</p>
+      <div class="role-controls" id="roleControls" role="group" aria-label="担当を選ぶ">
+        <span style="font-size:13px;color:var(--muted);">← まず人数を選んでください</span>
+      </div>
+
+      <!-- 表示エリア -->
+      <div id="minutesArea">
+        <div class="hint-hidden">〜 人数と担当ボタンを選ぶと議事録が表示されます 〜</div>
+      </div>
+    </section>
+
+    <!-- 白地図（参考）-->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>白地図（参考）</h2>
+        <a class="pdf-link" href="白地図.png" target="_blank" rel="noopener">画像を開く ↗</a>
+      </div>
+      <img class="map-preview" src="白地図.png" alt="テーマパーク白地図">
+    </section>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script>
+    const roleControls  = document.getElementById("roleControls");
+    const minutesArea   = document.getElementById("minutesArea");
+    let currentSize = null;
+    let currentRole = null;
+
+    function renderRoles(size) {
+      const pattern = GROUP_PATTERNS[size];
+      const roles   = Object.keys(pattern);
+      roleControls.innerHTML = "";
+      roles.forEach(role => {
+        const btn = document.createElement("button");
+        btn.className = "role-btn";
+        btn.dataset.role = role;
+        btn.textContent = role + "さん";
+        btn.addEventListener("click", () => selectRole(role));
+        roleControls.appendChild(btn);
+      });
+    }
+
+    function selectRole(role) {
+      if (!currentSize) return;
+      currentRole = role;
+      document.querySelectorAll(".role-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.role === role)
+      );
+      renderMinutes(currentSize, role);
+    }
+
+    function renderMinutes(size, role) {
+      const ids  = GROUP_PATTERNS[size][role];
+      const list = ids.map(id => MINUTES.find(m => m.id === id)).filter(Boolean);
+
+      minutesArea.innerHTML = `
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+          ${role}さんの担当議事録：第${ids.join("回・第")}回
+        </p>
+        <div class="minutes-list">
+          ${list.map(m => `
+            <div class="minutes-card">
+              <div class="card-header">
+                <span class="card-num">第${m.id}回</span>
+                <span class="card-title">${m.title}</span>
+              </div>
+              <div class="card-theme">テーマ：${m.theme}</div>
+              <ul>${m.items.map(t => `<li>${t}</li>`).join("")}</ul>
+              <div class="card-memo">${m.memo}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    document.querySelectorAll(".size-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const size = Number(btn.dataset.size);
+        currentSize = size;
+        currentRole = null;
+        document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderRoles(size);
+        minutesArea.innerHTML = '<div class="hint-hidden">〜 担当ボタンを選ぶと議事録が表示されます 〜</div>';
+      });
+    });
+  </script>
+</body>
+</html>

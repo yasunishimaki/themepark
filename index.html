@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>テーマパーク開園プロジェクト</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">◈ オンライン授業用 ◈</p>
+      <h1>テーマパーク開園プロジェクト</h1>
+    </div>
+    <nav class="top-nav" aria-label="ページ">
+      <a href="view.html">議事録を見る</a>
+      <a href="board.html">地図に配置する</a>
+    </nav>
+  </header>
+
+  <main class="content-layout">
+
+    <!-- ゲーム説明 -->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>ゲームのルール</h2>
+      </div>
+      <div class="section-divider">✦ ✦ ✦</div>
+      <div class="rule-box">
+        <ol>
+          <li>グループで <strong>各自の担当（A・B・C…）</strong>を決めます。</li>
+          <li>自分の担当のみを「議事録を見る」ページで確認します。</li>
+          <li>グループ内では <strong>声のみ</strong>で情報を共有し、他の人の画面は見ないようにします。</li>
+          <li><strong>どの情報が古く、どの情報が新しいか</strong>を注意して確認してください。</li>
+          <li>「地図に配置する」ページで施設・エリアのチップを3×3の白地図に配置し、最終決定図を完成させましょう。</li>
+          <li><strong>45分以内</strong>に、チームで1つの完成図を作ってください。</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 大切なこと -->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>大切なこと</h2>
+      </div>
+      <div style="font-size:14px;line-height:2;color:var(--muted);background:#f8f6f2;border-radius:8px;padding:14px 18px;">
+        正解を早く出すことだけが目的ではありません。<br>
+        <strong style="color:var(--primary);">「伝える」「聞く」「確認する」「整理する」</strong>ことを大切にしてください。
+      </div>
+    </section>
+
+    <!-- 白地図 -->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>白地図（3×3グリッド）</h2>
+        <a class="pdf-link" href="白地図.png" target="_blank" rel="noopener">画像を開く ↗</a>
+      </div>
+      <img class="map-preview" src="白地図.png" alt="テーマパーク白地図">
+    </section>
+
+    <!-- 配置チップ一覧 -->
+    <section class="section-band">
+      <div class="section-heading">
+        <h2>配置チップ一覧</h2>
+      </div>
+      <div class="chip-preview-grid" id="chipPreviewGrid"></div>
+      <p style="margin-top:12px;font-size:12px;color:var(--muted);">※ 中央川は中央と南の両方に配置するため2枚あります。</p>
+    </section>
+
+    <!-- ページ案内 -->
+    <section class="section-band">
+      <div class="section-divider">〜 ページ案内 〜</div>
+      <div class="home-layout" style="width:100%;margin:0;">
+        <div class="home-panel">
+          <h2 style="margin-bottom:10px;">議事録ページ</h2>
+          <p>グループ人数と担当（A〜F）を選んで、自分の議事録カードを確認できます。</p>
+          <a class="primary-link" href="view.html">議事録を見る →</a>
+        </div>
+        <div class="home-panel accent">
+          <h2 style="margin-bottom:10px;">配置ページ</h2>
+          <p>3×3の地図に施設・エリアのチップを配置して、最終決定図を完成させましょう。</p>
+          <a class="primary-link" href="board.html">地図に配置する →</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script>
+    const grid = document.getElementById("chipPreviewGrid");
+    const seen = new Set();
+    CHIPS.forEach(c => {
+      if (seen.has(c.name)) return;
+      seen.add(c.name);
+      grid.insertAdjacentHTML("beforeend", `
+        <div class="chip-preview-item">
+          <span class="chip-icon">${c.icon}</span>
+          <span>${c.name}</span>
+        </div>
+      `);
+    });
+  </script>
+</body>
+</html>
