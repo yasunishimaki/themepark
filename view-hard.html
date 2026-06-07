@@ -3,18 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>議事録を見る | テーマパーク開園プロジェクト</title>
+  <title>議事録を見る（難しい版）| テーマパーク開園プロジェクト</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* 難しい版 専用スタイル */
+    .hard-badge {
+      display: inline-block;
+      background: #c0392b;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      padding: 2px 8px;
+      letter-spacing: .05em;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    .card-hint {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #fffbe8;
+      border-left: 3px solid #e0b030;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      color: #7a5a10;
+      line-height: 1.6;
+    }
+    .card-hint::before {
+      content: "💡 読み取りのヒント：";
+      font-weight: 700;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .card-id-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #e0d4c4;
+      color: #4a3828;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    /* ヘッダーをハードモード色に */
+    .hard-header {
+      background: linear-gradient(135deg, #8b2020 0%, #5a0e0e 100%) !important;
+    }
+    .hard-mode-notice {
+      background: #fff0f0;
+      border: 1px solid #e0a0a0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #5a2020;
+      margin-bottom: 16px;
+    }
+    .hard-mode-notice strong { color: #c0392b; }
+  </style>
 </head>
 <body>
-  <header class="site-header compact">
+  <header class="site-header compact hard-header">
     <div>
       <p class="eyebrow">◈ 議事録確認 ◈</p>
-      <h1>テーマパーク開園プロジェクト</h1>
+      <h1>テーマパーク開園プロジェクト <span class="hard-badge">難しい版</span></h1>
     </div>
     <nav class="top-nav" aria-label="ページ">
       <a href="index.html">ホーム</a>
-      <a href="view-hard.html" style="background:#c0392b;border-color:#c0392b;">難しい版へ</a>
+      <a href="view.html">通常版</a>
       <a href="board.html">STEP1 施設</a>
       <a href="attraction.html">STEP2 アトラクション</a>
     </nav>
@@ -25,11 +84,17 @@
     <!-- グループ人数・担当選択 -->
     <section class="section-band">
       <div class="section-heading">
-        <h2>議事録カード</h2>
+        <h2>議事録カード <span class="hard-badge">難しい版</span></h2>
       </div>
+
+      <div class="hard-mode-notice">
+        ⚠️ この版では、<strong>「候補」「希望」「一時期」「見直し後」</strong>など、決定ではない情報が混じっています。<br>
+        情報が<strong>古いのか・新しいのか</strong>、<strong>案なのか・決定なのか</strong>を慎重に読み取ってください。<br>
+        他のメンバーの画面は見ず、<strong>声のみ</strong>で情報を共有しましょう。
+      </div>
+
       <p style="color:var(--muted);font-size:14px;margin-bottom:16px;line-height:1.9;">
-        ① グループの人数を選んでください。&nbsp; ② 自分の担当ボタンをクリックすると議事録が表示されます。<br>
-        <strong style="color:var(--primary);">他のメンバーの画面は見ないようにしましょう。</strong>
+        ① グループの人数を選んでください。&nbsp; ② 自分の担当ボタンをクリックすると議事録が表示されます。
       </p>
 
       <!-- 人数選択 -->
@@ -48,7 +113,7 @@
 
       <!-- 表示エリア -->
       <div id="minutesArea">
-        <div class="hint-hidden">〜 人数と担当ボタンを選ぶと議事録が表示されます 〜</div>
+        <div class="hint-hidden">〜 人数と担当ボタンを選ぶと議事録カードが表示されます 〜</div>
       </div>
     </section>
 
@@ -65,13 +130,13 @@
 
   <script src="data.js"></script>
   <script>
-    const roleControls  = document.getElementById("roleControls");
-    const minutesArea   = document.getElementById("minutesArea");
+    const roleControls = document.getElementById("roleControls");
+    const minutesArea  = document.getElementById("minutesArea");
     let currentSize = null;
     let currentRole = null;
 
     function renderRoles(size) {
-      const pattern = GROUP_PATTERNS[size];
+      const pattern = HARD_GROUP_PATTERNS[size];
       const roles   = Object.keys(pattern);
       roleControls.innerHTML = "";
       roles.forEach(role => {
@@ -94,23 +159,23 @@
     }
 
     function renderMinutes(size, role) {
-      const ids  = GROUP_PATTERNS[size][role];
-      const list = ids.map(id => MINUTES.find(m => m.id === id)).filter(Boolean);
+      const ids  = HARD_GROUP_PATTERNS[size][role];
+      const list = ids.map(id => HARD_MINUTES.find(m => m.id === id)).filter(Boolean);
 
       minutesArea.innerHTML = `
         <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-          ${role}さんの担当議事録：第${ids.join("回・第")}回
+          ${role}さんの担当カード：カード${ids.join("・カード")}
         </p>
         <div class="minutes-list">
           ${list.map(m => `
             <div class="minutes-card">
               <div class="card-header">
-                <span class="card-num">第${m.id}回</span>
+                <span class="card-id-badge">${m.id}</span>
                 <span class="card-title">${m.title}</span>
               </div>
               <div class="card-theme">テーマ：${m.theme}</div>
               <ul>${m.items.map(t => `<li>${t}</li>`).join("")}</ul>
-              <div class="card-memo">${m.memo}</div>
+              <div class="card-hint">${m.hint}</div>
             </div>
           `).join("")}
         </div>
@@ -125,7 +190,7 @@
         document.querySelectorAll(".size-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         renderRoles(size);
-        minutesArea.innerHTML = '<div class="hint-hidden">〜 担当ボタンを選ぶと議事録が表示されます 〜</div>';
+        minutesArea.innerHTML = '<div class="hint-hidden">〜 担当ボタンを選ぶと議事録カードが表示されます 〜</div>';
       });
     });
   </script>
