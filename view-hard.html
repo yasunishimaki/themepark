@@ -126,6 +126,36 @@
       <img class="map-preview" src="白地図.png" alt="テーマパーク白地図">
     </section>
 
+    <!-- カードL 最終調整メモ（配置後に開く） -->
+    <section class="section-band">
+      <div class="final-check-wrap">
+        <button class="final-check-btn" id="cardLBtn" type="button">
+          📋 配置できたら → カードL 最終調整メモで確認
+        </button>
+        <div class="final-check-panel" id="cardLPanel">
+          <div class="minutes-card" style="border-left-color:#c0392b;">
+            <div class="card-header">
+              <span class="card-id-badge" style="background:#f0d8d8;color:#c0392b;">L</span>
+              <span class="card-title">カードL　最終調整メモ</span>
+            </div>
+            <div class="card-theme">テーマ：全体の整合性確認</div>
+            <ul>
+              <li>開発しない自然資源は、当初方針どおり守る。</li>
+              <li>入口、水辺、橋は、来園者が最初に体験する中心的な景観としてまとめる。</li>
+              <li>宿泊施設は、入口に近く、海や夜間演出エリアを妨げない側にまとめる。</li>
+              <li>交通拠点は、地盤調査後に見直した案を採用する。</li>
+              <li>駅前には、大型ライドではなく、見通しのよい交通空間を確保する。</li>
+              <li>絶叫系の大型ライドは、駅前から離れた側にまとめる。</li>
+              <li>森の物語性を活かすエリアには、家族向けの乗り物と園内列車を組み合わせる。</li>
+              <li>夜の光を活かすエリアには、水辺を取り込む。</li>
+              <li>北東は、大きな建物を置かず、緑を残す。</li>
+            </ul>
+            <div class="card-hint">このカードには、直接の地名はあまり書かれていない。他のカードとつなげて判断する。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <script src="data.js"></script>
@@ -192,6 +222,16 @@
         renderRoles(size);
         minutesArea.innerHTML = '<div class="hint-hidden">〜 担当ボタンを選ぶと議事録カードが表示されます 〜</div>';
       });
+    });
+
+    // カードL 開閉
+    const cardLBtn   = document.getElementById("cardLBtn");
+    const cardLPanel = document.getElementById("cardLPanel");
+    cardLBtn.addEventListener("click", () => {
+      const open = cardLPanel.classList.toggle("open");
+      cardLBtn.textContent = open
+        ? "📋 カードL 最終調整メモ（閉じる）"
+        : "📋 配置できたら → カードL 最終調整メモで確認";
     });
   </script>
 </body>
