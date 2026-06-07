@@ -23,6 +23,34 @@
     <!-- 3×3グリッド -->
     <section class="board-stage" aria-label="配置グリッド">
       <div class="game-grid" id="gameGrid"></div>
+
+      <!-- 第12回議事録で確認（配置後に開く） -->
+      <div class="final-check-wrap">
+        <button class="final-check-btn" id="finalCheckBtn" type="button">
+          📋 配置できたら → 第12回 最終議事録で確認
+        </button>
+        <div class="final-check-panel" id="finalCheckPanel">
+          <div class="minutes-card" style="border-left-color:#3a9a5a;">
+            <div class="card-header">
+              <span class="card-num" style="background:#e0f0e8;color:#3a9a5a;">第12回</span>
+              <span class="card-title">第12回 定例会議</span>
+            </div>
+            <div class="card-theme">テーマ：最終確認</div>
+            <ul>
+              <li>北西の神聖な山と、南東の美しい海は固定で開発しない。</li>
+              <li>北にはオフィシャルホテルを置く。</li>
+              <li>北東は自然保護エリアとして残す。</li>
+              <li>西にはモノレール新駅を置く。</li>
+              <li>中央にはメインゲート、中央川、メインブリッジを置く。</li>
+              <li>東にはスリルエリアを置く。</li>
+              <li>南西には魔法の森エリアと蒸気機関車の線路を置く。</li>
+              <li>南には光の街エリアと中央川を置く。</li>
+              <li>アトラクションの最終数：ファミリー向け10個・大人夜間向け5個・絶叫系5個。</li>
+            </ul>
+            <div class="card-memo">古い案ではなく、最終決定を優先すること。</div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- チップパレット -->
@@ -209,6 +237,16 @@
     });
     document.getElementById("modalClose").addEventListener("click", () => modal.classList.remove("open"));
     modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+
+    // ── 第12回パネル開閉 ─────────────────────────────────
+    const finalBtn   = document.getElementById("finalCheckBtn");
+    const finalPanel = document.getElementById("finalCheckPanel");
+    finalBtn.addEventListener("click", () => {
+      const open = finalPanel.classList.toggle("open");
+      finalBtn.textContent = open
+        ? "📋 第12回 最終議事録（閉じる）"
+        : "📋 配置できたら → 第12回 最終議事録で確認";
+    });
 
     // ── 初期化 ──────────────────────────────────────────
     renderGrid();
