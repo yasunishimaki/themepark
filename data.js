@@ -187,53 +187,52 @@ const GROUP_PATTERNS = {
   },
 };
 
-// ─── 配置チップ（中央川は中央・南に1枚ずつ使用するため2枚）──
+// ─── 施設チップ（buhin画像・中央川は2枚）──────────────────
 const CHIPS = [
-  { id: "hotel",    name: "オフィシャルホテル",  icon: "🏨", color: "#d4a855" },
-  { id: "nature",   name: "自然保護エリア",       icon: "🌿", color: "#5aaa72" },
-  { id: "monorail", name: "モノレール新駅",       icon: "🚈", color: "#5a8fd4" },
-  { id: "gate",     name: "メインゲート",         icon: "🏰", color: "#c46e3a" },
-  { id: "river1",   name: "中央川",               icon: "🌊", color: "#3aa8d4" },
-  { id: "river2",   name: "中央川",               icon: "🌊", color: "#3aa8d4" },
-  { id: "bridge",   name: "メインブリッジ",       icon: "🌉", color: "#8a7a5a" },
-  { id: "thrill",   name: "スリルエリア",         icon: "🎢", color: "#d4555a" },
-  { id: "forest",   name: "魔法の森エリア",       icon: "🌲", color: "#3a9a5a" },
-  { id: "steam",    name: "蒸気機関車の線路",     icon: "🚂", color: "#7a6a5a" },
-  { id: "light",    name: "光の街エリア",         icon: "✨", color: "#9a5ad4" },
+  { id: "hotel",    name: "オフィシャルホテル",  img: "buhin1.png" },
+  { id: "monorail", name: "モノレール新駅",       img: "buhin2.png" },
+  { id: "gate",     name: "メインゲート",         img: "buhin3.png" },
+  { id: "forest",   name: "魔法の森エリア",       img: "buhin4.png" },
+  { id: "light",    name: "光の街エリア",         img: "buhin5.png" },
+  { id: "thrill",   name: "スリルエリア",         img: "buhin6.png" },
+  { id: "river1",   name: "中央川",               img: "buhin7.png" },
+  { id: "river2",   name: "中央川",               img: "buhin7.png" },
+  { id: "bridge",   name: "メインブリッジ",       img: "buhin8.png" },
+  { id: "steam",    name: "蒸気機関車の線路",     img: "buhin9.png" },
 ];
 
-// ─── 個別アトラクションチップ（20枚）─────────────────────
+// ─── アトラクションチップ（20枚・カテゴリ情報なし）──────────
+// ※ 1〜10: ファミリー向け、11〜15: 大人・夜間、16〜20: スリル・絶叫
+// ※ 学生にはカテゴリを表示せず、自分で判断させる
 const ATTRACTION_CHIPS = [
-  // ファミリー向け（10枚）
-  { id: "a-merry",   name: "メリーゴーランド", icon: "🎠", category: "family" },
-  { id: "a-tea",     name: "ティーカップ",     icon: "☕", category: "family" },
-  { id: "a-train",   name: "ミニトレイン",     icon: "🚃", category: "family" },
-  { id: "a-fairy",   name: "おとぎの家",       icon: "🏠", category: "family" },
-  { id: "a-castle",  name: "メルヘンキャッスル",icon: "🏯", category: "family" },
-  { id: "a-zoo",     name: "どうぶつ広場",     icon: "🐼", category: "family" },
-  { id: "a-kidsboat",name: "キッズポート",     icon: "⛵", category: "family" },
-  { id: "a-maze",    name: "森の迷路",         icon: "🌀", category: "family" },
-  { id: "a-dwarf",   name: "こびとの家",       icon: "🍄", category: "family" },
-  { id: "a-book",    name: "えほんシアター",   icon: "📖", category: "family" },
-  // 大人・夜のアトラクション（5枚）
-  { id: "a-tower",   name: "イルミネーションタワー", icon: "🗼", category: "night" },
-  { id: "a-nrest",   name: "ナイトレストラン",       icon: "🍽️", category: "night" },
-  { id: "a-lgarden", name: "ライトガーデン",         icon: "🌸", category: "night" },
-  { id: "a-jazz",    name: "ジャズステージ",         icon: "🎷", category: "night" },
-  { id: "a-nlounge", name: "夜景ラウンジ",           icon: "🌃", category: "night" },
-  // スリル・絶叫（5枚）
-  { id: "a-coaster", name: "ジェットコースター", icon: "🎢", category: "thrill" },
-  { id: "a-fall",    name: "フリーフォール",   icon: "⬇️", category: "thrill" },
-  { id: "a-water",   name: "ウォータースライド",icon: "💦", category: "thrill" },
-  { id: "a-spin",    name: "回転ライド",       icon: "🌀", category: "thrill" },
-  { id: "a-sky",     name: "スカイタワー",     icon: "🗽", category: "thrill" },
+  { id: "a1",  name: "メリーゴーランド",         img: "1.png" },
+  { id: "a2",  name: "ティーカップ",             img: "2.png" },
+  { id: "a3",  name: "ミニトレイン",             img: "3.png" },
+  { id: "a4",  name: "おとぎの家",               img: "4.png" },
+  { id: "a5",  name: "メルヘンキャッスル",       img: "5.png" },
+  { id: "a6",  name: "どうぶつ広場",             img: "6.png" },
+  { id: "a7",  name: "キッズポート",             img: "7.png" },
+  { id: "a8",  name: "森の迷路",                 img: "8.png" },
+  { id: "a9",  name: "こびとの家",               img: "9.png" },
+  { id: "a10", name: "えほんシアター",           img: "10.png" },
+  { id: "a11", name: "イルミネーションタワー",   img: "11.png" },
+  { id: "a12", name: "ナイトレストラン",         img: "12.png" },
+  { id: "a13", name: "ライトガーデン",           img: "13.png" },
+  { id: "a14", name: "ジャズステージ",           img: "14.png" },
+  { id: "a15", name: "夜景ラウンジ",             img: "15.png" },
+  { id: "a16", name: "ジェットコースター",       img: "16.png" },
+  { id: "a17", name: "フリーフォール",           img: "17.png" },
+  { id: "a18", name: "ウォータースライド",       img: "18.png" },
+  { id: "a19", name: "回転ライド",               img: "19.png" },
+  { id: "a20", name: "スカイタワー",             img: "20.png" },
 ];
 
-const ATTRACTION_CATEGORY_LABELS = {
-  family: { label: "ファミリー向け（10枚）", color: "#3a9a5a" },
-  night:  { label: "大人・夜のアトラクション（5枚）", color: "#9a5ad4" },
-  thrill: { label: "スリル・絶叫（5枚）",   color: "#d4555a" },
-};
+// ─── アトラクション配置ゾーン（attraction.html用）────────────
+const ATTRACTION_ZONES = [
+  { id: "sw", direction: "南西", areaName: "魔法の森エリア", capacity: 10, color: "#3a9a5a" },
+  { id: "s",  direction: "南",   areaName: "光の街エリア",   capacity: 5,  color: "#9a5ad4" },
+  { id: "e",  direction: "東",   areaName: "スリルエリア",   capacity: 5,  color: "#d4555a" },
+];
 
 // ─── グリッドセル ──────────────────────────────────────
 const GRID_CELLS = [

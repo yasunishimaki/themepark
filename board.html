@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>地図に配置する | テーマパーク開園プロジェクト</title>
+  <title>施設・エリアの配置 | テーマパーク開園プロジェクト</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header compact">
     <div>
-      <p class="eyebrow">◈ 配置操作 ◈</p>
-      <h1>テーマパーク開園プロジェクト</h1>
+      <p class="eyebrow">◈ STEP 1 ◈</p>
+      <h1>施設・エリアの配置</h1>
     </div>
     <nav class="top-nav" aria-label="ページ">
       <a href="index.html">ホーム</a>
-      <a href="view.html">議事録を見る</a>
+      <a href="view.html">議事録</a>
+      <a href="attraction.html" class="nav-step2">STEP2 アトラクション →</a>
     </nav>
   </header>
 
@@ -25,40 +26,32 @@
     </section>
 
     <!-- チップパレット -->
-    <aside class="shop-tray" aria-label="配置チップ">
+    <aside class="shop-tray" aria-label="施設チップ">
       <div class="tray-header">
-        <h2>配置チップ</h2>
+        <h2>施設チップ（10枚）</h2>
         <div class="tray-btns">
-          <button class="tray-btn answer-btn" id="answerBtn" type="button">✅ 正解を見る</button>
+          <button class="tray-btn answer-btn" id="answerBtn" type="button">✅ 正解</button>
           <button class="tray-btn" id="resetBtn" type="button">🔄 リセット</button>
         </div>
       </div>
       <div class="selected-status" id="selectedStatus">チップをクリックして選択</div>
-
-      <!-- タブ -->
-      <div class="palette-tabs">
-        <button class="palette-tab active" data-tab="facility">施設チップ</button>
-        <button class="palette-tab" data-tab="attraction">アトラクション</button>
-      </div>
-
-      <div class="card-palette" id="facilityPalette"></div>
-      <div class="card-palette" id="attractionPalette" style="display:none"></div>
-
+      <div class="img-palette" id="chipPalette"></div>
       <div class="board-tip">
         <strong>操作方法</strong><br>
         ① チップをクリック → 選択<br>
         ② マスをクリック → 配置<br>
-        ③ 配置済みチップをクリック → 削除
+        ③ マス内の画像クリック → 削除<br>
+        ※ 中央川は2枚あります
       </div>
     </aside>
   </main>
 
   <!-- 正解モーダル -->
-  <div class="modal-overlay" id="answerModal" role="dialog" aria-modal="true" aria-label="正解マップ">
+  <div class="modal-overlay" id="answerModal" role="dialog" aria-modal="true">
     <div class="modal-box">
       <div class="modal-header">
         <h3>🗺️ 正解マップ（教員用）</h3>
-        <button class="modal-close" id="modalClose" type="button" aria-label="閉じる">✕</button>
+        <button class="modal-close" id="modalClose" type="button">✕</button>
       </div>
       <div class="modal-body">
         <img src="完成図A.png" alt="テーマパーク完成図">
@@ -68,44 +61,26 @@
 
   <script src="data.js"></script>
   <script>
-    const STORAGE_KEY = "themepark-board-v2";
-
-    // cellId → chipId[]  （施設・アトラクション混在）
-    let placements = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    let selectedChipId = null;
-    let activeTab = "facility";
+    const STORAGE_KEY = "themepark-board-v3";
+    let placements   = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    let selectedId   = null;
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(placements)); }
-
-    // 施設チップとアトラクションチップを統合して検索
-    function allChips() { return [...CHIPS, ...ATTRACTION_CHIPS]; }
-    function chipById(id) { return allChips().find(c => c.id === id); }
-
-    function cellIdForChip(chipId) {
-      for (const [cellId, chips] of Object.entries(placements)) {
-        if (chips.includes(chipId)) return cellId;
-      }
-      return null;
+    function chipById(id) { return CHIPS.find(c => c.id === id); }
+    function isPlaced(id) {
+      return Object.values(placements).some(arr => arr.includes(id));
     }
-    function isPlaced(chipId) { return cellIdForChip(chipId) !== null; }
 
+    // ── 選択状態 ────────────────────────────────────────
     function setSelected(id) {
-      selectedChipId = id;
+      selectedId = id;
       const chip = id ? chipById(id) : null;
       document.getElementById("selectedStatus").textContent =
-        chip ? `${chip.icon} ${chip.name} を選択中` : "チップをクリックして選択";
-      renderPalettes();
+        chip ? `「${chip.name}」を選択中` : "チップをクリックして選択";
+      renderPalette();
     }
 
-    // ── チップ数に応じた枠線クラスを返す（③）──────────────
-    function cellDepthClass(count) {
-      if (count === 0) return "";
-      if (count === 1) return "depth-1";
-      if (count === 2) return "depth-2";
-      return "depth-3";
-    }
-
-    // ─── グリッド描画 ─────────────────────────────────
+    // ── グリッド描画 ─────────────────────────────────────
     function renderGrid() {
       const grid = document.getElementById("gameGrid");
       grid.innerHTML = "";
@@ -114,25 +89,22 @@
         el.className = "grid-cell" + (cell.fixed ? " fixed" : "");
         el.dataset.cellId = cell.id;
 
-        const label = document.createElement("div");
-        label.className = "cell-label";
-        label.textContent = cell.label;
-        el.appendChild(label);
+        const lbl = document.createElement("div");
+        lbl.className = "cell-label";
+        lbl.textContent = cell.label;
+        el.appendChild(lbl);
 
         if (cell.fixed) {
-          el.innerHTML += `
-            <div class="cell-fixed-content">
-              <span class="fixed-icon">${cell.fixedIcon}</span>
-              <span class="fixed-name">${cell.fixedText}</span>
-            </div>`;
+          el.innerHTML += `<div class="cell-fixed-content">
+            <span class="fixed-icon">${cell.fixedIcon}</span>
+            <span class="fixed-name">${cell.fixedText}</span></div>`;
         } else {
-          const chipArea = document.createElement("div");
-          chipArea.className = "cell-chips";
-          chipArea.id = "chips-" + cell.id;
-          el.appendChild(chipArea);
+          const area = document.createElement("div");
+          area.className = "cell-img-chips";
+          area.id = "chips-" + cell.id;
+          el.appendChild(area);
           el.addEventListener("click", () => onCellClick(cell.id));
         }
-
         grid.appendChild(el);
       });
       renderCellChips();
@@ -148,118 +120,63 @@
         area.innerHTML = "";
         const placed = placements[cell.id] || [];
 
-        // ③ 枠線の太さで配置枚数をヒント
-        el.classList.remove("depth-1", "depth-2", "depth-3");
-        if (placed.length > 0) el.classList.add(cellDepthClass(placed.length));
+        // ③ 枠線ヒント（枚数に応じて太く）
+        el.classList.remove("depth-1","depth-2","depth-3");
+        if (placed.length === 1) el.classList.add("depth-1");
+        else if (placed.length === 2) el.classList.add("depth-2");
+        else if (placed.length >= 3) el.classList.add("depth-3");
 
-        // 施設チップ（大）
-        placed.filter(id => CHIPS.find(c => c.id === id)).forEach(chipId => {
+        placed.forEach(chipId => {
           const chip = chipById(chipId);
           if (!chip) return;
-          const div = document.createElement("div");
-          div.className = "placed-chip";
-          div.style.background = chip.color;
-          div.innerHTML = `<span class="chip-icon-sm">${chip.icon}</span><span class="chip-name-sm">${chip.name}</span>`;
-          div.title = chip.name + "（クリックで削除）";
-          div.addEventListener("click", e => { e.stopPropagation(); removeChip(chipId, cell.id); });
-          area.appendChild(div);
-        });
-
-        // アトラクションチップ（小・まとめて表示）
-        const attrIds = placed.filter(id => ATTRACTION_CHIPS.find(c => c.id === id));
-        if (attrIds.length > 0) {
-          const wrap = document.createElement("div");
-          wrap.className = "attr-wrap";
-          attrIds.forEach(chipId => {
-            const chip = chipById(chipId);
-            if (!chip) return;
-            const catMeta = ATTRACTION_CATEGORY_LABELS[chip.category];
-            const span = document.createElement("span");
-            span.className = "attr-chip";
-            span.style.background = catMeta ? catMeta.color : "#888";
-            span.textContent = chip.icon;
-            span.title = chip.name + "（クリックで削除）";
-            span.addEventListener("click", e => { e.stopPropagation(); removeChip(chipId, cell.id); });
-            wrap.appendChild(span);
+          const img = document.createElement("img");
+          img.src   = chip.img;
+          img.alt   = chip.name;
+          img.className = "cell-chip-img";
+          img.title = chip.name + "（クリックで削除）";
+          img.addEventListener("click", e => {
+            e.stopPropagation();
+            removeChip(chipId, cell.id);
           });
-          area.appendChild(wrap);
-        }
+          area.appendChild(img);
+        });
       });
     }
 
-    // ─── パレット描画（2タブ）────────────────────────────
-    function renderPalettes() {
-      renderFacilityPalette();
-      renderAttractionPalette();
-    }
-
-    function renderFacilityPalette() {
-      const palette = document.getElementById("facilityPalette");
+    // ── パレット描画（2列画像グリッド）──────────────────────
+    function renderPalette() {
+      const palette = document.getElementById("chipPalette");
       palette.innerHTML = "";
       CHIPS.forEach(chip => {
         const placed = isPlaced(chip.id);
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "vcard" +
-          (selectedChipId === chip.id ? " selected" : "") +
+        btn.className = "img-chip-btn" +
+          (selectedId === chip.id ? " selected" : "") +
           (placed ? " placed" : "");
-        btn.innerHTML = `<span class="vc-icon">${chip.icon}</span><span class="vc-name">${chip.name}</span>`;
+        btn.innerHTML = `<img src="${chip.img}" alt="${chip.name}"><span>${chip.name}</span>`;
         btn.title = placed ? "配置済み" : chip.name;
         btn.addEventListener("click", () => {
           if (placed) return;
-          setSelected(selectedChipId === chip.id ? null : chip.id);
+          setSelected(selectedId === chip.id ? null : chip.id);
         });
         palette.appendChild(btn);
       });
     }
 
-    function renderAttractionPalette() {
-      const palette = document.getElementById("attractionPalette");
-      palette.innerHTML = "";
-      const categories = ["family", "night", "thrill"];
-      categories.forEach(cat => {
-        const meta  = ATTRACTION_CATEGORY_LABELS[cat];
-        const chips = ATTRACTION_CHIPS.filter(c => c.category === cat);
-
-        // カテゴリラベル
-        const header = document.createElement("div");
-        header.className = "attr-category-label";
-        header.style.borderColor = meta.color;
-        header.style.color = meta.color;
-        header.textContent = meta.label;
-        palette.appendChild(header);
-
-        chips.forEach(chip => {
-          const placed = isPlaced(chip.id);
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "vcard vcard-sm" +
-            (selectedChipId === chip.id ? " selected" : "") +
-            (placed ? " placed" : "");
-          btn.innerHTML = `<span class="vc-icon">${chip.icon}</span><span class="vc-name">${chip.name}</span>`;
-          btn.title = placed ? "配置済み" : chip.name;
-          btn.addEventListener("click", () => {
-            if (placed) return;
-            setSelected(selectedChipId === chip.id ? null : chip.id);
-          });
-          palette.appendChild(btn);
-        });
-      });
-    }
-
-    // ─── 操作 ─────────────────────────────────────────
+    // ── 配置・削除 ───────────────────────────────────────
     function onCellClick(cellId) {
-      if (!selectedChipId) return;
+      if (!selectedId) return;
+      if (isPlaced(selectedId)) return;
       const cell = GRID_CELLS.find(c => c.id === cellId);
       if (!cell || cell.fixed) return;
-      if (isPlaced(selectedChipId)) return;
 
       if (!placements[cellId]) placements[cellId] = [];
-      placements[cellId].push(selectedChipId);
+      placements[cellId].push(selectedId);
       save();
 
       const el = document.querySelector(`[data-cell-id="${cellId}"]`);
-      if (el) { el.classList.add("target-active"); setTimeout(() => el.classList.remove("target-active"), 400); }
+      if (el) { el.classList.add("target-active"); setTimeout(() => el.classList.remove("target-active"), 350); }
 
       renderCellChips();
       setSelected(null);
@@ -268,49 +185,34 @@
     function removeChip(chipId, cellId) {
       if (!placements[cellId]) return;
       placements[cellId] = placements[cellId].filter(id => id !== chipId);
-      if (placements[cellId].length === 0) delete placements[cellId];
+      if (!placements[cellId].length) delete placements[cellId];
       save();
       renderCellChips();
-      renderPalettes();
-      if (selectedChipId === chipId) setSelected(null);
+      renderPalette();
+      if (selectedId === chipId) setSelected(null);
     }
 
-    // ─── タブ切替 ─────────────────────────────────────
-    document.querySelectorAll(".palette-tab").forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeTab = btn.dataset.tab;
-        document.querySelectorAll(".palette-tab").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById("facilityPalette").style.display   = activeTab === "facility"   ? "" : "none";
-        document.getElementById("attractionPalette").style.display = activeTab === "attraction" ? "" : "none";
-        setSelected(null);
-      });
-    });
-
-    // ─── リセット ─────────────────────────────────────
+    // ── リセット・正解 ────────────────────────────────────
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (!confirm("配置をすべてリセットしますか？")) return;
       placements = {};
       save();
       setSelected(null);
       renderCellChips();
-      renderPalettes();
+      renderPalette();
     });
 
-    // ─── 正解モーダル ─────────────────────────────────
-    const modal     = document.getElementById("answerModal");
-    const answerBtn = document.getElementById("answerBtn");
-    const closeBtn  = document.getElementById("modalClose");
-    answerBtn.addEventListener("click", () => {
-      if (!confirm("正解マップを表示しますか？\n（授業中は教員が確認してください）")) return;
+    const modal = document.getElementById("answerModal");
+    document.getElementById("answerBtn").addEventListener("click", () => {
+      if (!confirm("正解マップを表示しますか？")) return;
       modal.classList.add("open");
     });
-    closeBtn.addEventListener("click", () => modal.classList.remove("open"));
+    document.getElementById("modalClose").addEventListener("click", () => modal.classList.remove("open"));
     modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
 
-    // ─── 初期化 ───────────────────────────────────────
+    // ── 初期化 ──────────────────────────────────────────
     renderGrid();
-    renderPalettes();
+    renderPalette();
     setSelected(null);
   </script>
 </body>

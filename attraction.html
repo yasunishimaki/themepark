@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>アトラクションの配置 | テーマパーク開園プロジェクト</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header compact">
+    <div>
+      <p class="eyebrow">◈ STEP 2 ◈</p>
+      <h1>アトラクションの配置</h1>
+    </div>
+    <nav class="top-nav" aria-label="ページ">
+      <a href="index.html">ホーム</a>
+      <a href="view.html">議事録</a>
+      <a href="board.html">← STEP1 施設配置</a>
+    </nav>
+  </header>
+
+  <main class="attr-layout">
+
+    <!-- ゾーンボード -->
+    <section class="zone-board" aria-label="エリアゾーン">
+      <div class="zone-tip">
+        各エリアに当てはまるアトラクションを配置してください。<br>
+        <small>どのアトラクションがどのエリアに合うか、議事録をもとに話し合って決めましょう。</small>
+      </div>
+      <div class="zone-grid" id="zoneGrid">
+        <!-- JS で描画 -->
+      </div>
+      <div class="zone-actions">
+        <button class="tray-btn answer-btn" id="answerBtn" type="button">✅ 正解を見る</button>
+        <button class="tray-btn" id="resetBtn" type="button">🔄 リセット</button>
+      </div>
+    </section>
+
+    <!-- アトラクション パレット -->
+    <aside class="shop-tray attr-tray" aria-label="アトラクション">
+      <div class="tray-header">
+        <h2>アトラクション（20枚）</h2>
+      </div>
+      <div class="selected-status" id="selectedStatus">チップをクリックして選択</div>
+      <div class="img-palette img-palette-attr" id="attrPalette"></div>
+      <div class="board-tip">
+        <strong>操作方法</strong><br>
+        ① 画像をクリック → 選択<br>
+        ② エリア枠をクリック → 配置<br>
+        ③ 配置済み画像クリック → 削除<br>
+        <br>
+        <strong>ヒント</strong><br>
+        アトラクションは全部で20個。<br>
+        議事録の情報をもとに、<br>
+        どのエリアか判断しよう！
+      </div>
+    </aside>
+  </main>
+
+  <!-- 正解モーダル -->
+  <div class="modal-overlay" id="answerModal" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✅ 正解（教員用）</h3>
+        <button class="modal-close" id="modalClose" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="answer-grid">
+          <div class="answer-zone" style="border-color:#3a9a5a">
+            <div class="answer-zone-title" style="color:#3a9a5a">南西 ／ 魔法の森エリア（10個）</div>
+            <p>メリーゴーランド・ティーカップ・ミニトレイン・おとぎの家・メルヘンキャッスル・どうぶつ広場・キッズポート・森の迷路・こびとの家・えほんシアター</p>
+          </div>
+          <div class="answer-zone" style="border-color:#9a5ad4">
+            <div class="answer-zone-title" style="color:#9a5ad4">南 ／ 光の街エリア（5個）</div>
+            <p>イルミネーションタワー・ナイトレストラン・ライトガーデン・ジャズステージ・夜景ラウンジ</p>
+          </div>
+          <div class="answer-zone" style="border-color:#d4555a">
+            <div class="answer-zone-title" style="color:#d4555a">東 ／ スリルエリア（5個）</div>
+            <p>ジェットコースター・フリーフォール・ウォータースライド・回転ライド・スカイタワー</p>
+          </div>
+          <div class="answer-zone" style="border-color:#c8b89a">
+            <div class="answer-zone-title" style="color:#7a6a5a">アトラクション総数</div>
+            <p>ファミリー向け <strong>10個</strong>・大人夜間向け <strong>5個</strong>・スリル絶叫 <strong>5個</strong>　合計 <strong>20個</strong></p>
+          </div>
+        </div>
+        <img src="完成図A.png" alt="テーマパーク完成図" style="margin-top:14px;width:100%;border-radius:8px;">
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const STORAGE_KEY = "themepark-attr-v1";
+    // zoneId → attrId[]
+    let placements = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    let selectedId = null;
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(placements)); }
+    function attrById(id) { return ATTRACTION_CHIPS.find(c => c.id === id); }
+    function isPlaced(id) { return Object.values(placements).some(arr => arr.includes(id)); }
+
+    // ── 選択状態 ──────────────────────────────────────────
+    function setSelected(id) {
+      selectedId = id;
+      const chip = id ? attrById(id) : null;
+      document.getElementById("selectedStatus").textContent =
+        chip ? `「${chip.name}」を選択中` : "チップをクリックして選択";
+      renderPalette();
+      // ゾーンのホバースタイル更新
+      document.querySelectorAll(".zone-cell").forEach(el => {
+        el.classList.toggle("zone-ready", !!id);
+      });
+    }
+
+    // ── ゾーン描画 ────────────────────────────────────────
+    function renderZones() {
+      const grid = document.getElementById("zoneGrid");
+      grid.innerHTML = "";
+      ATTRACTION_ZONES.forEach(zone => {
+        const el = document.createElement("div");
+        el.className = "zone-cell";
+        el.dataset.zoneId = zone.id;
+        el.style.setProperty("--zone-color", zone.color);
+
+        el.innerHTML = `
+          <div class="zone-header">
+            <span class="zone-direction">${zone.direction}</span>
+            <span class="zone-name" style="color:${zone.color}">${zone.areaName}</span>
+            <span class="zone-count" id="count-${zone.id}">0 / ${zone.capacity}</span>
+          </div>
+          <div class="zone-chips" id="zone-chips-${zone.id}"></div>`;
+
+        el.addEventListener("click", () => onZoneClick(zone.id));
+        grid.appendChild(el);
+      });
+      renderZoneChips();
+    }
+
+    function renderZoneChips() {
+      ATTRACTION_ZONES.forEach(zone => {
+        const area    = document.getElementById("zone-chips-" + zone.id);
+        const counter = document.getElementById("count-" + zone.id);
+        if (!area) return;
+        area.innerHTML = "";
+        const placed = placements[zone.id] || [];
+
+        // カウンター更新
+        counter.textContent = `${placed.length} / ${zone.capacity}`;
+        counter.style.color = placed.length > zone.capacity ? "#d4555a" : "#7a6a5a";
+
+        placed.forEach(chipId => {
+          const chip = attrById(chipId);
+          if (!chip) return;
+          const wrap = document.createElement("div");
+          wrap.className = "zone-chip-wrap";
+          const img = document.createElement("img");
+          img.src   = chip.img;
+          img.alt   = chip.name;
+          img.className = "zone-chip-img";
+          img.title = chip.name + "（クリックで削除）";
+          img.addEventListener("click", e => {
+            e.stopPropagation();
+            removeChip(chipId, zone.id);
+          });
+          const lbl = document.createElement("div");
+          lbl.className = "zone-chip-name";
+          lbl.textContent = chip.name;
+          wrap.appendChild(img);
+          wrap.appendChild(lbl);
+          area.appendChild(wrap);
+        });
+      });
+    }
+
+    // ── パレット描画 ──────────────────────────────────────
+    function renderPalette() {
+      const palette = document.getElementById("attrPalette");
+      palette.innerHTML = "";
+      ATTRACTION_CHIPS.forEach(chip => {
+        const placed = isPlaced(chip.id);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "img-chip-btn img-chip-sm" +
+          (selectedId === chip.id ? " selected" : "") +
+          (placed ? " placed" : "");
+        btn.innerHTML = `<img src="${chip.img}" alt="${chip.name}"><span>${chip.name}</span>`;
+        btn.title = placed ? "配置済み" : chip.name;
+        btn.addEventListener("click", () => {
+          if (placed) return;
+          setSelected(selectedId === chip.id ? null : chip.id);
+        });
+        palette.appendChild(btn);
+      });
+    }
+
+    // ── 配置・削除 ──────────────────────────────────────
+    function onZoneClick(zoneId) {
+      if (!selectedId) return;
+      if (isPlaced(selectedId)) return;
+      if (!placements[zoneId]) placements[zoneId] = [];
+      placements[zoneId].push(selectedId);
+      save();
+
+      const el = document.querySelector(`[data-zone-id="${zoneId}"]`);
+      if (el) { el.classList.add("target-active"); setTimeout(() => el.classList.remove("target-active"), 350); }
+
+      renderZoneChips();
+      setSelected(null);
+    }
+
+    function removeChip(chipId, zoneId) {
+      if (!placements[zoneId]) return;
+      placements[zoneId] = placements[zoneId].filter(id => id !== chipId);
+      if (!placements[zoneId].length) delete placements[zoneId];
+      save();
+      renderZoneChips();
+      renderPalette();
+      if (selectedId === chipId) setSelected(null);
+    }
+
+    // ── リセット・正解 ─────────────────────────────────────
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (!confirm("配置をすべてリセットしますか？")) return;
+      placements = {};
+      save();
+      setSelected(null);
+      renderZoneChips();
+      renderPalette();
+    });
+
+    const modal = document.getElementById("answerModal");
+    document.getElementById("answerBtn").addEventListener("click", () => {
+      if (!confirm("正解を表示しますか？\n（授業中は教員が確認してください）")) return;
+      modal.classList.add("open");
+    });
+    document.getElementById("modalClose").addEventListener("click", () => modal.classList.remove("open"));
+    modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+
+    // ── 初期化 ──────────────────────────────────────────
+    renderZones();
+    renderPalette();
+    setSelected(null);
+  </script>
+</body>
+</html>
