@@ -106,7 +106,7 @@
       seen.add(c.name);
       grid.insertAdjacentHTML("beforeend", `
         <div class="chip-preview-item">
-          <span class="chip-icon">${c.icon}</span>
+          <img src="${c.img}" alt="${c.name}" class="chip-preview-img">
           <span>${c.name}</span>
         </div>
       `);
